@@ -73,6 +73,10 @@ const pages = [
   { path: '/chapters/17.html', verses: 13, ids: [] },
   { path: '/chapters/26.html', verses: 41, ids: [] },
   { path: '/sources.html', verses: 0, ids: [] },
+  { path: '/glossary.html', verses: 0, ids: [] },
+  { path: '/plan.html', verses: 0, ids: [] },
+  { path: '/privacy.html', verses: 0, ids: [] },
+  { path: '/terms.html', verses: 0, ids: [] },
   { path: '/about.html', verses: 0, ids: [] },
 ];
 let errors = 0;
@@ -84,6 +88,8 @@ for (const spec of pages) {
       title: document.title,
       h1: (document.querySelector('h1')||{}).textContent || '',
       verses: document.querySelectorAll('.verse').length,
+      pali: document.querySelectorAll('.verse-pali').length,
+      themeBtns: document.querySelectorAll('[data-theme-option]').length,
       missingIds: ${JSON.stringify(spec.ids)}.filter(id => !document.getElementById(id)),
       brokenCss: getComputedStyle(document.body).fontFamily.length === 0,
     };
@@ -94,8 +100,10 @@ for (const spec of pages) {
   if (spec.verses && info.verses !== spec.verses) problems.push(`게송 ${info.verses} ≠ ${spec.verses}`);
   if (info.missingIds.length) problems.push('누락 id: ' + info.missingIds.join(','));
   if (info.brokenCss) problems.push('CSS 미적용');
+  if (spec.verses && info.pali !== spec.verses) problems.push(`팔리어 ${info.pali} ≠ ${spec.verses}`);
+  if (!info.themeBtns) problems.push('테마 버튼 없음');
   if (problems.length) { errors++; console.log(`✗ ${spec.path} — ${problems.join(' / ')}`); }
-  else console.log(`✓ ${spec.path} — "${info.h1.trim().slice(0, 24)}" 게송 ${info.verses}`);
+  else console.log(`✓ ${spec.path} — "${info.h1.trim().slice(0, 24)}" 게송 ${info.verses} 팔리어 ${info.pali}`);
 }
 
 ws.close();

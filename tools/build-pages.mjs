@@ -11,6 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // ── 데이터 로드 ─────────────────────────────────────────────
 const en = JSON.parse(readFileSync(join(root, 'data/verses-en.json'), 'utf8'));
+const pali = JSON.parse(readFileSync(join(root, 'data/verses-pali.json'), 'utf8')).verses;
 
 const ko = {};
 for (const f of readdirSync(join(root, 'data')).filter((f) => /^ko-\d\.js$/.test(f)).sort()) {
@@ -26,6 +27,9 @@ for (const ch of en.chapters) {
   for (const v of ch.verses) {
     count++;
     if (ko[v.n] === undefined) missing.push(v.n);
+    for (let n = v.n; n <= (v.nEnd || v.n); n++) {
+      if (pali[n] === undefined) missing.push(`팔리어 ${n}`);
+    }
   }
 }
 console.log(`게송 단락: ${count} / 우리말 번역: ${Object.keys(ko).length}`);
@@ -62,6 +66,8 @@ function page({ title, desc, canonical, body, extraHead = '', depth = 0 }) {
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${p}icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${p}apple-touch-icon.png">
+<link rel="manifest" href="${p}manifest.webmanifest">
 <link rel="stylesheet" href="${p}assets/site.css">
 ${extraHead}
 </head>
@@ -74,8 +80,15 @@ ${extraHead}
       <a href="${p}index.html">홈</a>
       <a href="${p}index.html#toc">목차</a>
       <a href="${p}sources.html">영어 원문 자료실</a>
+      <a href="${p}glossary.html">용어 사전</a>
+      <a href="${p}plan.html">독송 플랜</a>
       <a href="${p}about.html">이 책에 대하여</a>
     </nav>
+    <div class="theme-set" role="group" data-i18n-aria-label="테마 선택">
+      <button class="theme-opt" type="button" data-theme-option="light" aria-pressed="false" aria-label="라이트 모드로 보기" title="라이트">☀️</button>
+      <button class="theme-opt" type="button" data-theme-option="dark" aria-pressed="false" aria-label="다크 모드로 보기" title="다크">🌙</button>
+      <button class="theme-opt" type="button" data-theme-option="system" aria-pressed="true" aria-label="시스템 설정 따르기" title="시스템">🖥️</button>
+    </div>
     <button class="menu-btn" id="menuBtn" type="button" aria-label="메뉴" aria-expanded="false" aria-controls="nav"><span></span><span></span><span></span></button>
   </div>
 </header>
@@ -87,7 +100,7 @@ ${body}
     <p class="foot-title">마음의 괴물을 다스리는 부처님 — 법구경(Dhammapada) 영어·한국어 대역</p>
     <p class="foot-note">영어 원문: F. Max Müller 번역(1881, 공중도메인) · 우리말 번역·해설: 자체 편찬<br>
     본 사이트는 법구경 학습을 돕기 위한 무료 사이트입니다.</p>
-    <p class="foot-links"><a href="${p}index.html">홈</a> · <a href="${p}sources.html">영어 원문 자료실</a> · <a href="${p}about.html">이 책에 대하여</a></p>
+    <p class="foot-links"><a href="${p}index.html">홈</a> · <a href="${p}sources.html">영어 원문 자료실</a> · <a href="${p}glossary.html">용어 사전</a> · <a href="${p}plan.html">독송 플랜</a> · <a href="${p}about.html">이 책에 대하여</a> · <a href="${p}privacy.html">개인정보처리방침</a> · <a href="${p}terms.html">이용약관</a></p>
   </div>
 </footer>
 <script src="${p}assets/app.js"></script>
@@ -106,12 +119,17 @@ for (const ch of en.chapters) {
   const versesHtml = ch.verses
     .map((v) => {
       const numLabel = v.nEnd && v.nEnd !== v.n ? `${v.n}–${v.nEnd}` : String(v.n);
+      // 병합 게송(예: 58–59)은 팔리어를 줄 단위로 이어 붙입니다.
+      const paliLines = [];
+      for (let n = v.n; n <= (v.nEnd || v.n); n++) if (pali[n]) paliLines.push(pali[n]);
       return `
 <article class="verse" id="v${v.n}" data-verse="${v.n}">
   <div class="verse-head">
     <span class="verse-num">${numLabel}</span>
     <button class="tts-btn" type="button" data-tts aria-label="영어 낭독 듣기">듣기</button>
+    <button class="copy-btn" type="button" data-copy aria-label="게송 인용 복사">인용 복사</button>
   </div>
+  <p class="verse-pali" lang="pi">${esc(paliLines.join(' '))}</p>
   <p class="verse-en" lang="en">${esc(v.en)}</p>
   <p class="verse-ko">${esc(ko[v.n])}</p>
 </article>`;
@@ -137,6 +155,7 @@ for (const ch of en.chapters) {
     <div class="chapter-tools">
       <button class="btn btn-ghost" type="button" data-tts-all>이 품 영어 낭독</button>
       <button class="btn btn-ghost" type="button" data-ko-toggle>우리말 가리기</button>
+      <button class="btn btn-ghost" type="button" data-pali-toggle aria-pressed="true">팔리어 가리기</button>
       <button class="btn btn-ghost" type="button" onclick="window.print()">인쇄 · PDF</button>
     </div>
   </header>
@@ -150,13 +169,31 @@ ${versesHtml}
   </nav>
 </article>`;
 
+  // 구조화 데이터 — 검색엔진용 (Book + Chapter)
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: `법구경 제${ch.num}품 ${meta.koFull}`,
+    alternateName: meta.en,
+    inLanguage: ['ko', 'en', 'pi'],
+    isPartOf: {
+      '@type': 'Book',
+      name: '마음의 괴물을 다스리는 부처님 — 법구경(Dhammapada) 영어·한국어 대역',
+      url: 'https://buddha.monster/',
+    },
+    description: `법구경 제${ch.num}품 ${meta.koFull}(${meta.pali}). 게송 ${meta.from}–${meta.to} 팔리어 원문·영어 원문·우리말 번역, 품별 해설과 마음 다스리기 실천.`,
+    url: `https://buddha.monster/chapters/${String(ch.num).padStart(2, '0')}.html`,
+  };
+  const extraHead = `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>`;
+
   writeFileSync(
     join(outDir, `${String(ch.num).padStart(2, '0')}.html`),
     page({
       title: `제${ch.num}품 ${meta.koFull} — ${meta.en} | 법구경 ${meta.from}–${meta.to} | 마음의 괴물을 다스리는 부처님`,
-      desc: `법구경 제${ch.num}품 ${meta.koFull}(${meta.pali}). 게송 ${meta.from}–${meta.to} 영어 원문과 우리말 번역, 품별 해설과 마음 다스리기 실천까지 담았습니다.`,
+      desc: `법구경 제${ch.num}품 ${meta.koFull}(${meta.pali}). 게송 ${meta.from}–${meta.to} 팔리어 원문·영어 원문·우리말 번역, 품별 해설과 마음 다스리기 실천까지 담았습니다.`,
       canonical: `chapters/${String(ch.num).padStart(2, '0')}.html`,
       body,
+      extraHead,
       depth: 1,
     })
   );
@@ -174,7 +211,11 @@ const index = en.chapters.map((ch) => {
     from: meta.from,
     to: meta.to,
     theme: meta.theme,
-    verses: ch.verses.map((v) => ({ n: v.n, nEnd: v.nEnd || v.n, en: v.en, ko: ko[v.n] })),
+    verses: ch.verses.map((v) => {
+      const paliLines = [];
+      for (let n = v.n; n <= (v.nEnd || v.n); n++) if (pali[n]) paliLines.push(pali[n]);
+      return { n: v.n, nEnd: v.nEnd || v.n, en: v.en, ko: ko[v.n], pali: paliLines.join(' ') };
+    }),
   };
 });
 writeFileSync(join(root, 'data', 'search-index.js'),

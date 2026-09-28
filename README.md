@@ -18,28 +18,38 @@ node tools/browser-check.mjs # 헤드리스 Chrome 렌더링 확인 (선택)
 ```
 index.html          홈 — 표지 · 오늘의 법구 · 26품 목차 · 게송 검색
 sources.html        영어로 읽는 법구경 자료실 (영어 원문 사이트 8곳 안내)
+glossary.html       용어 사전 — 법구경 핵심 어휘 팔리어·영어·한국어 30선
+plan.html           26주 독송 플랜 — 6개월 완주 로드맵
 about.html          이 책에 대하여 — 법구경 소개 · 사용법 · 저작권 안내
+privacy.html        개인정보처리방침
+terms.html          이용약관
+404.html            없는 주소 안내 (GitHub Pages 커스텀 404)
 chapters/           생성된 품별 페이지 26개 (제1품 ~ 제26품)
+                    — 게송마다 팔리어 원문 · 영어 원문 · 우리말 번역 병기
 data/
-  verses-en.json    영어 원문 (tools/parse-source.mjs 로 생성)
+  verses-en.json    영어 원문 — F. Max Müller(1881, 공중도메인)
+  verses-pali.json  팔리어 원문 — SuttaCentral bilara-data(Mahāsaṅgīti)
   ko-1.js ~ ko-6.js 우리말 번역 (게송 번호별 — 자체 번역)
   chapters.js       26품 메타 — 품 이름·팔리어·해설·마음 다스리기 실천
   search-index.js   생성물 — 홈 검색·오늘의 법구용 데이터
 assets/
-  site.css          스타일 (라이트/다크 · 반응형 · 인쇄용)
-  app.js            공통 스크립트 (메뉴·테마·TTS 낭독·우리말 토글·검색)
+  site.css          스타일 (라이트/다크 테마 · 반응형 · 인쇄용)
+  app.js            공통 스크립트 (테마 선택·TTS 낭독·번역 토글·인용 복사·검색·sw 등록)
   fonts/            Pretendard 서브셋 (tools/make-font-subset.py 로 생성)
-tools/              parse-source · build-pages · verify · browser-check
-                    · font-charset · make-font-subset
-_source/            Gutenberg 원문 (파싱 입력 — 배포 대상 아님)
-CNAME · robots.txt · sitemap.xml · icon.svg
+manifest.webmanifest · sw.js   PWA — 설치형 앱 · 오프라인 핵심 캐시
+tools/              parse-source · parse-pali · build-pages · verify · browser-check
+                    · serve · stage-site · font-charset · make-font-subset · make-icons
+_source/            Gutenberg 원문 · SuttaCentral 팔리어 원문 (파싱 입력 — 배포 대상 아님)
+CNAME · robots.txt · sitemap.xml · icon.svg · icon-*.png · og.png
 ```
 
 ## 판본과 저작권
 
 - **영어 원문**: F. Max Müller 번역(『동양의 성전』 제10권, 1881) — **공중도메인**.
   Project Gutenberg eBook #2017에서 내려받아 `tools/parse-source.mjs`로 파싱했습니다.
-- **우리말 번역·해설·실천 문장**: 이 사이트를 위해 새로 작성했습니다.
+- **팔리어 원문**: Mahāsaṅgīti 판(SuttaCentral bilara-data) — **공중도메인**.
+  `tools/parse-pali.mjs`로 게송 번호별 데이터로 변환했습니다.
+- **우리말 번역·해설·실천 문장·용어 사전**: 이 사이트를 위해 새로 작성했습니다.
 - **서체**: Pretendard Variable(SIL OFL 1.1) — 사이트에 나오는 글자만 담은 자체 호스팅 서브셋.
 
 ## 데이터 규칙
@@ -55,3 +65,4 @@ CNAME · robots.txt · sitemap.xml · icon.svg
 2. `node tools/build-pages.mjs` — 챕터 페이지 재생성
 3. `python tools/make-font-subset.py` — 새 글자가 생겼으면 서브셋 재생성
 4. `node tools/verify.mjs` — 검증 통과 확인
+5. `npm run stage` — 배포본 점검 후 커밋·푸시 (CI 와 배포 워크플로가 자동 실행됩니다)

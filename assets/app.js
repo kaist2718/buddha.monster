@@ -24,16 +24,36 @@
     });
   });
 
-  // ── 테마 (시스템 설정 자동 반영) ────────────────────────
+  // ── 테마 (선택 저장 · 기본값은 시스템 설정) ──────────────
   guard('theme', function () {
-    if (!window.matchMedia) return;
-    var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    var apply = function () {
-      document.documentElement.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
-    };
+    var KEY = 'buddha.theme';
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    var mode = saved === 'light' || saved === 'dark' ? saved : 'system';
+
+    function apply() {
+      var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+      root.setAttribute('data-theme', dark ? 'dark' : 'light');
+      document.querySelectorAll('[data-theme-option]').forEach(function (b) {
+        b.setAttribute('aria-pressed', b.getAttribute('data-theme-option') === mode ? 'true' : 'false');
+      });
+    }
     apply();
-    if (mq.addEventListener) mq.addEventListener('change', apply);
-    else if (mq.addListener) mq.addListener(apply);
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var onChange = function () { if (mode === 'system') apply(); };
+      if (mq.addEventListener) mq.addEventListener('change', onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    }
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-theme-option]') : null;
+      if (!btn) return;
+      mode = btn.getAttribute('data-theme-option');
+      try { localStorage.setItem(KEY, mode); } catch (err) {}
+      apply();
+    });
   });
 
   // ── 영어 낭독 (speechSynthesis) ────────────────────────
@@ -81,6 +101,53 @@
       var hidden = document.body.getAttribute('data-hide-ko') === 'true';
       document.body.setAttribute('data-hide-ko', hidden ? 'false' : 'true');
       btn.textContent = hidden ? '우리말 가리기' : '우리말 보이기';
+    });
+  });
+
+  // ── 팔리어 가리기 토글 ────────────────────────────────
+  guard('pali-toggle', function () {
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-pali-toggle]') : null;
+      if (!btn) return;
+      var hidden = document.body.getAttribute('data-hide-pali') === 'true';
+      document.body.setAttribute('data-hide-pali', hidden ? 'false' : 'true');
+      btn.textContent = hidden ? '팔리어 가리기' : '팔리어 보이기';
+      btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+    });
+  });
+
+  // ── 서비스 워커 등록 (오프라인 캐시) ────────────────
+  guard('sw', function () {
+    if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+    var scripts = document.getElementsByTagName('script');
+    var src = scripts.length ? scripts[scripts.length - 1].src : '';
+    var base = src.replace(/assets\/app\.js.*$/, '');
+    if (!base) base = './';
+    navigator.serviceWorker.register(base + 'sw.js').catch(function () {});
+  });
+
+  // ── 게송 인용 복사 ────────────────────────────────────
+  guard('copy', function () {
+    if (!navigator.clipboard) return;
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-copy]') : null;
+      if (!btn) return;
+      var art = btn.closest('.verse');
+      if (!art) return;
+      var num = art.getAttribute('data-verse');
+      var pali = art.querySelector('.verse-pali');
+      var en = art.querySelector('.verse-en');
+      var ko = art.querySelector('.verse-ko');
+      var parts = ['법구경 ' + num + '게송'];
+      if (pali && pali.textContent.trim()) parts.push(pali.textContent.trim());
+      if (en) parts.push(en.textContent.trim());
+      if (ko) parts.push(ko.textContent.trim());
+      parts.push('— 「마음의 괴물을 다스리는 부처님」 (buddha.monster)');
+      navigator.clipboard.writeText(parts.join('\n')).then(function () {
+        var old = btn.textContent;
+        btn.textContent = '복사됨!';
+        setTimeout(function () { btn.textContent = old; }, 1500);
+      });
     });
   });
 

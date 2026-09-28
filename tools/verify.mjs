@@ -55,8 +55,18 @@ for (const l of links) {
 ok(`내부 링크 ${links.size}개 확인`);
 
 // 4) 홈·자료실·소개 페이지 구조
-for (const p of ['index.html', 'sources.html', 'about.html', 'assets/site.css', 'assets/app.js', 'icon.svg']) {
+for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'plan.html', 'privacy.html', 'terms.html', 'manifest.webmanifest', 'sw.js', 'assets/site.css', 'assets/app.js', 'icon.svg']) {
   if (!existsSync(join(root, p))) fail(`파일 없음: ${p}`);
+}
+// 정적 페이지의 내부 링크 확인
+for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'plan.html', 'privacy.html', 'terms.html', '404.html']) {
+  const html = readFileSync(join(root, p), 'utf8');
+  for (const l of html.matchAll(/href="([^"#][^"]*)"/g)) {
+    const ref = l[1];
+    if (/^(https?:|mailto:)/.test(ref)) continue;
+    const target = join(root, ref.split('#')[0]);
+    if (!existsSync(target)) fail(`${p}: 깨진 링크 ${ref}`);
+  }
 }
 const home = readFileSync(join(root, 'index.html'), 'utf8');
 for (const id of ['toc', 'search', 'dailyVerse']) {

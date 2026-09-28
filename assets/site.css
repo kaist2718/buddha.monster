@@ -117,6 +117,16 @@ a:hover { text-decoration: underline; }
 }
 .nav a:hover { color: var(--text); background: var(--surface-2); text-decoration: none; }
 
+/* ── 테마 선택 버튼 ───────────────────────────────────── */
+.theme-set { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
+.theme-opt {
+  width: 32px; height: 32px; border: 0; border-radius: 999px;
+  background: transparent; cursor: pointer; font-size: .95rem; line-height: 1;
+  opacity: .55; transition: background .12s ease, opacity .12s ease;
+}
+.theme-opt:hover { opacity: 1; }
+.theme-opt[aria-pressed="true"] { background: var(--surface-2); opacity: 1; box-shadow: inset 0 0 0 1px var(--border); }
+
 .menu-btn {
   display: none; margin-left: auto;
   width: 42px; height: 42px; border: 1px solid var(--border);
@@ -293,6 +303,17 @@ a:hover { text-decoration: underline; }
 }
 .tts-btn:hover { color: var(--text); border-color: var(--accent); }
 .tts-btn[data-speaking="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.verse-pali {
+  font-family: var(--serif); font-style: italic; font-size: 1.02rem;
+  color: var(--accent-2); margin: 0 0 12px; line-height: 1.85;
+}
+[data-hide-pali="true"] .verse-pali { display: none; }
+.copy-btn {
+  margin-left: 8px; padding: 5px 13px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text-soft); font-size: .78rem; font-weight: 700; cursor: pointer;
+}
+.copy-btn:hover { color: var(--text); border-color: var(--accent); }
 .verse-en {
   font-family: var(--serif); font-size: 1.08rem; line-height: 1.8;
   margin: 0 0 12px; color: var(--text);
@@ -340,6 +361,8 @@ a:hover { text-decoration: underline; }
 /* ── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .grid-3, .grid-2, .toc-grid { grid-template-columns: 1fr; }
+  .theme-set { display: none; }
+  .nav .theme-set { display: flex; margin-top: 10px; }
   .nav {
     display: none; position: absolute; top: 64px; left: 0; right: 0;
     flex-direction: column; gap: 0; padding: 10px 16px 16px;

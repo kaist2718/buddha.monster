@@ -1,0 +1,19 @@
+{
+  "name": "마음의 괴물을 다스리는 부처님 — 법구경 영어·한국어 대역",
+  "short_name": "괴물을 다스리는 부처님",
+  "description": "법구경 26품 423게송을 팔리어 원문·영어 원문·우리말 번역으로 담은 무료 대역본. 품별 해설, 마음 다스리기 실천, 오늘의 법구, 게송 검색.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf7f2",
+  "theme_color": "#2b2118",
+  "categories": ["books", "education", "religion"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
