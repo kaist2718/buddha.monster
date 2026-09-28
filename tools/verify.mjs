@@ -40,6 +40,7 @@ for (const p of pages) {
   if (!html.includes('<h1>')) fail(`${p}: h1 없음`);
   if (!html.includes('id="trainStrip"')) fail(`${p}: 마음 단련 스트립(#trainStrip) 없음`);
   if (!html.includes('assets/train.js')) fail(`${p}: assets/train.js 미포함`);
+  if (!html.includes('aria-label="테마 선택"')) fail(`${p}: 테마 선택 그룹의 aria-label 없음`);
   for (const l of html.matchAll(/href="([^"#][^"]*)"/g)) links.add(l[1]);
 }
 if (verseEls === 414) ok(`챕터 페이지 게송 요소 414개(병합 게송 포함) — 실제: ${verseEls}`);
@@ -66,10 +67,14 @@ for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'p
   for (const l of html.matchAll(/href="([^"#][^"]*)"/g)) {
     const ref = l[1];
     if (/^(https?:|mailto:)/.test(ref)) continue;
-    const target = join(root, ref.split('#')[0]);
+    const target = join(root, ref.replace(/^\//, '').split('#')[0]);
     if (!existsSync(target)) fail(`${p}: 깨진 링크 ${ref}`);
   }
 }
+// 404 는 모든 경로에서 서빙되므로 자산·링크가 절대 경로여야 합니다
+const notFound = readFileSync(join(root, '404.html'), 'utf8');
+if (!notFound.includes('href="/assets/site.css"')) fail('404.html: 절대 경로(/assets/site.css) 미사용 — 중첩 경로에서 스타일이 깨집니다');
+if (/href="(?!\/|#|https?:|mailto:)/.test(notFound)) fail('404.html: 상대 경로 링크 — 모든 경로에서 깨질 수 있습니다');
 const home = readFileSync(join(root, 'index.html'), 'utf8');
 for (const id of ['toc', 'search', 'dailyVerse', 'training', 'trainPanel', 'trainMini']) {
   if (!home.includes(`id="${id}"`)) fail(`index.html: #${id} 없음`);

@@ -39,6 +39,24 @@ jobs:
       - name: 배포용 사이트 폴더 구성 (공개 목록만)
         run: npm run stage
 
+      # Pages 가 켜져 있지 않으면 아래 configure-pages 가 "Not Found" 로 모호하게 실패합니다.
+      # (2026-09-28 첫 배포 실패 원인) 그 이유를 한국어로 바로 알 수 있게 사전 확인합니다.
+      - name: GitHub Pages 사전 확인
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            if curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" > /dev/null; then
+              echo "✓ GitHub Pages 사용 중 — 배포를 계속합니다"
+              exit 0
+            fi
+            echo "Pages 확인 재시도 ($i/3) ..."
+            sleep 5
+          done
+          echo "::error title=GitHub Pages 미설정::저장소 Settings → Pages → Build and deployment → Source = 'GitHub Actions' 로 설정한 뒤 워크플로를 다시 실행하세요."
+          exit 1
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

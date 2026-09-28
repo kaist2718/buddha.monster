@@ -88,7 +88,10 @@ for (const file of walk(OUT).filter((f) => f.endsWith('.html'))) {
   for (const m of html.matchAll(/(?:href|src)="([^"#][^"]*)"/g)) {
     const ref = m[1];
     if (/^(https?:|mailto:|data:|#)/.test(ref)) continue;
-    const target = path.resolve(path.dirname(file), ref.split('#')[0]);
+    // 404.html 은 절대 경로('/assets/…')를 쓰므로 루트 기준으로 해석합니다.
+    const target = ref.startsWith('/')
+      ? path.join(OUT, ref.slice(1).split('#')[0])
+      : path.resolve(path.dirname(file), ref.split('#')[0]);
     if (!fs.existsSync(target)) fail(`자산 없음: ${path.relative(OUT, file)} → ${ref}`);
   }
 }

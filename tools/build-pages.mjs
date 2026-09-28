@@ -86,7 +86,7 @@ ${extraHead}
       <a href="${p}plan.html">독송 플랜</a>
       <a href="${p}about.html">이 책에 대하여</a>
     </nav>
-    <div class="theme-set" role="group" data-i18n-aria-label="테마 선택">
+    <div class="theme-set" role="group" aria-label="테마 선택">
       <button class="theme-opt" type="button" data-theme-option="light" aria-pressed="false" aria-label="라이트 모드로 보기" title="라이트">☀️</button>
       <button class="theme-opt" type="button" data-theme-option="dark" aria-pressed="false" aria-label="다크 모드로 보기" title="다크">🌙</button>
       <button class="theme-opt" type="button" data-theme-option="system" aria-pressed="true" aria-label="시스템 설정 따르기" title="시스템">🖥️</button>
