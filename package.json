@@ -1,0 +1,21 @@
+{
+  "name": "buddha-monster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "buddha.monster — 법구경 26품 423게송 영어·한국어 대역 정적 사이트",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "build": "node tools/build-pages.mjs",
+    "verify": "node tools/verify.mjs",
+    "check:browser": "node tools/browser-check.mjs",
+    "stage": "node tools/stage-site.mjs",
+    "font": "python tools/make-font-subset.py",
+    "icons": "python tools/make-icons.py",
+    "check": "npm run build && npm run verify",
+    "check:ci": "npm run verify && npm run stage"
+  }
+}

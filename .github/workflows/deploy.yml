@@ -1,0 +1,57 @@
+name: Deploy to GitHub Pages
+
+# 사이트 파일만 골라 담은 _site 폴더를 배포합니다.
+# main 브랜치를 그대로 배포하면 tools/ · .github/ · package.json 같은 운영 자료까지
+# 인터넷에 공개되므로, tools/stage-site.mjs 로 공개 목록만 추려 올립니다.
+#
+# 설정 (저장소 → Settings → Pages):
+#   · Build and deployment → Source = "GitHub Actions"
+#   · Custom domain(buddha.monster)은 같은 화면에서 그대로 유지합니다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: build (_site)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+
+      # 검증이 통과해야 배포합니다 (게송 423 · 번역 누락 · 링크 · 구조).
+      - name: 사이트 검증
+        run: npm run verify
+
+      - name: 배포용 사이트 폴더 구성 (공개 목록만)
+        run: npm run stage
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

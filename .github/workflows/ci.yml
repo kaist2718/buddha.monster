@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: verify + stage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+
+      - name: 사이트 검증 (게송 수 · 번역 누락 · 링크 · 구조)
+        run: npm run verify
+
+      - name: 배포본 구성 점검 (공개 목록 · sitemap · 자산 · 운영 파일 침투)
+        run: npm run stage
