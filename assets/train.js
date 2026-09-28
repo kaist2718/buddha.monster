@@ -226,6 +226,43 @@
       '</a>';
   }
 
+  // ── 화면 — 주간·월간 수련 그래프 ────────────────────
+  function graphData() {
+    var now = new Date();
+    var weeks = [], months = [], i, d, sum;
+    for (i = 11; i >= 0; i--) {
+      var end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7);
+      sum = 0;
+      for (d = 0; d < 7; d++) {
+        var day = new Date(end.getFullYear(), end.getMonth(), end.getDate() - d);
+        sum += state.days[dayStr(day)] || 0;
+      }
+      weeks.push({ label: (end.getMonth() + 1) + '/' + end.getDate(), value: sum });
+    }
+    for (i = 5; i >= 0; i--) {
+      var m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var last = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+      sum = 0;
+      for (d = 1; d <= last.getDate(); d++) {
+        sum += state.days[dayStr(new Date(m.getFullYear(), m.getMonth(), d))] || 0;
+      }
+      months.push({ label: (m.getMonth() + 1) + '월', value: sum });
+    }
+    return { weeks: weeks, months: months };
+  }
+
+  function bars(data, label) {
+    var max = 1;
+    data.forEach(function (d) { if (d.value > max) max = d.value; });
+    return '<div class="train-graph" role="img" aria-label="' + label + '">' + data.map(function (d) {
+      var h = Math.round((d.value / max) * 92);
+      return '<span class="train-graph-col">' +
+        (d.value ? '<i class="train-graph-val">' + d.value + '</i>' : '<i class="train-graph-val empty"></i>') +
+        '<span class="train-graph-bar' + (d.value ? '' : ' zero') + '" style="height:' + Math.max(h, 3) + 'px" title="' + d.label + ' · ' + d.value + '"></span>' +
+        '<i class="train-graph-label">' + d.label + '</i></span>';
+    }).join('') + '</div>';
+  }
+
   // ── 화면 — 홈 수련 패널 ───────────────────────────────
   function renderPanel() {
     var el = document.getElementById('trainPanel');
@@ -281,6 +318,14 @@
         '<div class="train-stat"><b>' + state.chaptersRead.length + ' / 26</b><span>완독한 품</span></div>' +
         '<div class="train-stat"><b>' + (state.days[today()] || 0) + '</b><span>오늘의 단련</span></div>' +
       '</div>' +
+      (function () {
+        var g = graphData();
+        return '<div>' +
+          '<p class="train-xp-note">주간 마음 단련 — 최근 12주</p>' + bars(g.weeks, '최근 12주 주간 마음 단련 그래프') +
+          '<p class="train-xp-note">월간 마음 단련 — 최근 6개월</p>' + bars(g.months, '최근 6개월 월간 마음 단련 그래프') +
+          '<p class="train-note">완독·암송·낭독 등 모든 수련이 들어간 날별 마음 단련을 주·월 단위로 모은 것입니다.</p>' +
+          '</div>';
+      })() +
       '<div>' +
         '<p class="train-xp-note">오늘의 수련 과제 — 하루 한 번씩 마음 단련을 받습니다</p>' +
         '<div class="train-quests">' + quests + '</div>' +

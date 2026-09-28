@@ -66,6 +66,55 @@
     var gen = 0; // 이전 재생의 콜백이 새 재생을 건드리지 않게 하는 표식
     var bar = null, statusEl = null, pauseBtn = null, keepAlive = 0;
 
+    // ── 목소리·속도 선택 (선택은 기기에 저장) ──────────
+    var voiceSel = document.querySelector('[data-tts-voice]');
+    var rateSel = document.querySelector('[data-tts-rate]');
+    function escAttr(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+    function currentRate() {
+      return (rateSel && parseFloat(rateSel.value)) || 0.92;
+    }
+    function currentVoice() {
+      if (!voiceSel || !voiceSel.value) return null;
+      var voices = window.speechSynthesis.getVoices() || [];
+      for (var i = 0; i < voices.length; i++) {
+        if ((voices[i].voiceURI || voices[i].name) === voiceSel.value) return voices[i];
+      }
+      return null;
+    }
+    function fillVoices() {
+      if (!voiceSel) return;
+      var voices = window.speechSynthesis.getVoices() || [];
+      var en = voices.filter(function (v) { return /^en/i.test(v.lang); });
+      var list = en.length ? en : voices;
+      if (!list.length) return; // 목소리 목록이 아직 없으면 기본 목소리만
+      var html = '<option value="">기본 목소리</option>';
+      list.forEach(function (v) {
+        html += '<option value="' + escAttr(v.voiceURI || v.name) + '">' + escAttr(v.name) + ' (' + escAttr(v.lang) + ')</option>';
+      });
+      voiceSel.innerHTML = html;
+      try {
+        var saved = localStorage.getItem('buddha.tts.voice');
+        if (saved) voiceSel.value = saved;
+      } catch (e) {}
+    }
+    fillVoices();
+    if (window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener('voiceschanged', fillVoices);
+    else window.speechSynthesis.onvoiceschanged = fillVoices;
+    if (voiceSel) voiceSel.addEventListener('change', function () {
+      try { localStorage.setItem('buddha.tts.voice', voiceSel.value); } catch (e) {}
+    });
+    if (rateSel) {
+      try {
+        var savedRate = localStorage.getItem('buddha.tts.rate');
+        if (savedRate) rateSel.value = savedRate;
+      } catch (e) {}
+      rateSel.addEventListener('change', function () {
+        try { localStorage.setItem('buddha.tts.rate', rateSel.value); } catch (e) {}
+      });
+    }
+
     // 긴 게송은 문장 단위로 나눠 재생합니다
     function splitSpeech(text) {
       var parts = text.match(/[^.!?]+[.!?]*/g) || [text];
@@ -161,7 +210,9 @@
       }
       var u = new SpeechSynthesisUtterance(item.text);
       u.lang = 'en-US';
-      u.rate = 0.92;
+      u.rate = currentRate();
+      var uv = currentVoice();
+      if (uv) u.voice = uv;
       u.onend = function () {
         if (myGen !== gen || session.mode === 'idle' || session.mode === 'stopped') return;
         session.i += 1;
@@ -426,7 +477,7 @@
     box.appendChild(link);
   });
 
-  // ── 홈: 게송 검색 (초성 검색 · 오타 보정 포함) ─────────
+  // ── 홈: 게송 검색 (초성 검색 · 오타 보정 · 품별 필터) ───
   guard('search', function () {
     var input = document.getElementById('searchInput');
     var out = document.getElementById('searchResults');
@@ -468,6 +519,26 @@
       return prev[b.length] <= max;
     }
 
+    // 일치한 자리에 <mark> 를 넣습니다 — 본문은 HTML 을 이스케이프해 안전하게
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function markUp(text, ranges) {
+      var merged = ranges.slice().sort(function (a, b) { return a[0] - b[0]; });
+      var html = '', pos = 0;
+      merged.forEach(function (r) {
+        if (r[0] < pos) return; // 겹치는 범위는 건너뜁니다
+        html += escHtml(text.slice(pos, r[0])) + '<mark>' + escHtml(text.slice(r[0], r[1])) + '</mark>';
+        pos = r[1];
+      });
+      return html + escHtml(text.slice(pos));
+    }
+    function wordsWithPos(s) {
+      var r = [], re = /[a-z0-9가-힣']+/g, m;
+      while ((m = re.exec(s))) r.push({ w: m[0], s: m.index, e: m.index + m[0].length });
+      return r;
+    }
+
     var flat = [];
     window.DHP_INDEX.forEach(function (ch) {
       ch.verses.forEach(function (v) {
@@ -476,11 +547,23 @@
         flat.push({
           n: v.n, nEnd: v.nEnd, en: v.en, ko: v.ko, ch: ch.num, chKo: ch.ko,
           enL: enL, koL: koL,
-          cho: chosung(String(v.ko || '')),
-          words: (enL + ' ' + koL).split(/[^a-z0-9가-힣']+/).filter(Boolean),
+          enWords: wordsWithPos(enL),
+          koWords: wordsWithPos(koL),
         });
       });
     });
+
+    // 품별 필터 — 고른 품 안에서만 찾습니다
+    var filterSel = document.getElementById('searchChapter');
+    if (filterSel) {
+      window.DHP_INDEX.forEach(function (ch) {
+        var o = document.createElement('option');
+        o.value = String(ch.num);
+        o.textContent = '제' + ch.num + '품 ' + ch.ko;
+        filterSel.appendChild(o);
+      });
+      filterSel.addEventListener('change', function () { render(input.value); });
+    }
 
     function render(q) {
       q = q.trim().toLowerCase();
@@ -490,26 +573,41 @@
       }
       var tokens = q.split(/\s+/).filter(Boolean);
       var choseong = /^[ㄱ-ㅎ\s]+$/.test(q);
+      var only = filterSel ? Number(filterSel.value) : 0;
       var hits = [];
       for (var i = 0; i < flat.length; i++) {
         var v = flat[i];
+        if (only && v.ch !== only) continue;
         var score = 0, matchedAll = true;
+        var enRanges = [], koRanges = [];
         for (var t = 0; t < tokens.length; t++) {
           var tok = tokens[t], s = 0;
           if (choseong) {
-            if (v.cho.indexOf(tok) >= 0) s = 2; // 초성 검색
+            var cw = v.koWords.filter(function (x) { return chosung(x.w).indexOf(tok) >= 0; });
+            if (cw.length) {
+              s = 2; // 초성 검색 — 맞은 낱말을 통째로 강조
+              cw.forEach(function (x) { koRanges.push([x.s, x.e]); });
+            }
           } else if (v.enL.indexOf(tok) >= 0 || v.koL.indexOf(tok) >= 0) {
             s = 3; // 정확히 들어 있는 낱말
+            var ei = v.enL.indexOf(tok);
+            while (ei >= 0) { enRanges.push([ei, ei + tok.length]); ei = v.enL.indexOf(tok, ei + 1); }
+            var ki = v.koL.indexOf(tok);
+            while (ki >= 0) { koRanges.push([ki, ki + tok.length]); ki = v.koL.indexOf(tok, ki + 1); }
           } else if (tok.length >= 3) {
             var max = tok.length >= 5 ? 2 : 1; // 긴 낱말일수록 오타를 넉넉히 허용
-            for (var w = 0; w < v.words.length; w++) {
-              if (Math.abs(v.words[w].length - tok.length) <= max && isNear(v.words[w], tok, max)) { s = 1; break; }
+            var nearEn = v.enWords.filter(function (x) { return Math.abs(x.w.length - tok.length) <= max && isNear(x.w, tok, max); });
+            var nearKo = v.koWords.filter(function (x) { return Math.abs(x.w.length - tok.length) <= max && isNear(x.w, tok, max); });
+            if (nearEn.length || nearKo.length) {
+              s = 1; // 오타 보정 — 맞은 낱말을 통째로 강조
+              nearEn.forEach(function (x) { enRanges.push([x.s, x.e]); });
+              nearKo.forEach(function (x) { koRanges.push([x.s, x.e]); });
             }
           }
           if (!s) { matchedAll = false; break; }
           score += s;
         }
-        if (matchedAll) hits.push({ v: v, score: score });
+        if (matchedAll) hits.push({ v: v, score: score, enRanges: enRanges, koRanges: koRanges });
       }
       hits.sort(function (a, b) { return b.score - a.score || a.v.n - b.v.n; });
       hits = hits.slice(0, 30);
@@ -526,8 +624,8 @@
       }).join('');
       var nodes = out.querySelectorAll('.search-hit');
       hits.forEach(function (h, i) {
-        nodes[i].querySelector('.hit-en').textContent = h.v.en;
-        nodes[i].querySelector('.hit-ko').textContent = h.v.ko;
+        nodes[i].querySelector('.hit-en').innerHTML = markUp(h.v.en, h.enRanges);
+        nodes[i].querySelector('.hit-ko').innerHTML = markUp(h.v.ko, h.koRanges);
       });
     }
 

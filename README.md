@@ -57,6 +57,10 @@ CNAME · robots.txt · sitemap.xml · icon.svg · icon-*.png · og.png
 - **우리말 번역·해설·실천 문장·용어 사전**: 이 사이트를 위해 새로 작성했습니다.
 - **서체**: Pretendard Variable(SIL OFL 1.1) — 사이트에 나오는 글자만 담은 자체 호스팅 서브셋.
 
+## 문의
+
+문의·오류 제보: **kaist2718@gmail.com**
+
 ## 방문 분석
 
 자체 호스팅 분석 스크립트를 씁니다(쿠키 미사용 → 동의 배너 불필요).

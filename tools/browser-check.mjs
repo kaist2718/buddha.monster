@@ -116,7 +116,29 @@ for (const spec of pages) {
           input.dispatchEvent(new Event('input', { bubbles: true }));
           return results.querySelectorAll('.search-hit').length;
         }
-        return { exact: count('hatred'), choseong: count('ㅎㄴ'), typo: count('hatread'), none: count('zzqqxxzz') };
+        var exact = count('hatred');
+        var marks = results.querySelectorAll('mark').length;
+        var choseong = count('ㅎㄴ');
+        var typo = count('hatread');
+        var none = count('zzqqxxzz');
+        var filterOk = false;
+        var filter = document.getElementById('searchChapter');
+        if (filter) {
+          count('hatred');
+          filter.value = '1';
+          filter.dispatchEvent(new Event('change', { bubbles: true }));
+          var chips = results.querySelectorAll('.hit-ch');
+          filterOk = chips.length > 0 && Array.prototype.every.call(chips, function (c) { return c.textContent.indexOf('제1품') === 0; });
+          filter.value = '0';
+          filter.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return { exact: exact, choseong: choseong, typo: typo, none: none, marks: marks, filterOk: filterOk };
+      })(),
+      graphs: (function () {
+        return {
+          count: document.querySelectorAll('.train-graph').length,
+          cols: document.querySelectorAll('.train-graph-col').length,
+        };
       })(),
       ttsBar: (function () {
         var btn = document.querySelector('[data-tts-all]');
@@ -125,6 +147,8 @@ for (const spec of pages) {
         return {
           created: !!document.querySelector('.tts-bar [data-tts-pause]'),
           stopBtn: !!document.querySelector('.tts-bar [data-tts-stop]'),
+          voice: !!document.querySelector('[data-tts-voice]'),
+          rateOpts: document.querySelectorAll('[data-tts-rate] option').length,
         };
       })(),
     };
@@ -148,10 +172,18 @@ for (const spec of pages) {
     if (info.search.choseong < 1) problems.push('검색: 초성 검색 실패');
     if (info.search.typo < 1) problems.push('검색: 오타 보정 실패');
     if (info.search.none > 0) problems.push('검색: 없는 낱말에도 결과 표시');
+    if (info.search.marks < 1) problems.push('검색: 일치 강조(mark) 없음');
+    if (!info.search.filterOk) problems.push('검색: 품별 필터 실패');
+  }
+  if (spec.path === '/' && info.graphs) {
+    if (info.graphs.count !== 2) problems.push('수련 그래프 ' + info.graphs.count + ' ≠ 2');
+    if (info.graphs.cols !== 18) problems.push('수련 그래프 막대 ' + info.graphs.cols + ' ≠ 18');
   }
   if (info.ttsBar) {
     if (!info.ttsBar.created) problems.push('낭독 제어 바 미표시');
     if (!info.ttsBar.stopBtn) problems.push('낭독 정지 단추 없음');
+    if (!info.ttsBar.voice) problems.push('목소리 선택 없음');
+    if (info.ttsBar.rateOpts < 4) problems.push('속도 선택 ' + info.ttsBar.rateOpts + ' ≠ 4');
   }
   if (!info.title) problems.push('title 없음');
   if (!info.h1.trim()) problems.push('h1 없음');

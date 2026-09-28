@@ -42,6 +42,8 @@ for (const p of pages) {
   if (!html.includes('assets/train.js')) fail(`${p}: assets/train.js 미포함`);
   if (!html.includes('aria-label="테마 선택"')) fail(`${p}: 테마 선택 그룹의 aria-label 없음`);
   if (!html.includes('"BreadcrumbList"')) fail(`${p}: 브레드크럼 구조화 데이터 없음`);
+  if (!html.includes('data-tts-voice') || !html.includes('data-tts-rate')) fail(`${p}: 낭독 목소리·속도 선택 없음`);
+  if (!html.includes('mailto:kaist2718@gmail.com')) fail(`${p}: 문의 이메일(kaist2718@gmail.com) 없음`);
   for (const l of html.matchAll(/href="([^"#][^"]*)"/g)) links.add(l[1]);
 }
 if (verseEls === 414) ok(`챕터 페이지 게송 요소 414개(병합 게송 포함) — 실제: ${verseEls}`);
@@ -72,12 +74,16 @@ for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'p
     if (!existsSync(target)) fail(`${p}: 깨진 링크 ${ref}`);
   }
 }
+// 모든 정적 페이지에 문의 이메일이 실려 있는지 확인
+for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'plan.html', 'privacy.html', 'terms.html', '404.html']) {
+  if (!readFileSync(join(root, p), 'utf8').includes('mailto:kaist2718@gmail.com')) fail(`${p}: 문의 이메일(kaist2718@gmail.com) 없음`);
+}
 // 404 는 모든 경로에서 서빙되므로 자산·링크가 절대 경로여야 합니다
 const notFound = readFileSync(join(root, '404.html'), 'utf8');
 if (!notFound.includes('href="/assets/site.css"')) fail('404.html: 절대 경로(/assets/site.css) 미사용 — 중첩 경로에서 스타일이 깨집니다');
 if (/href="(?!\/|#|https?:|mailto:)/.test(notFound)) fail('404.html: 상대 경로 링크 — 모든 경로에서 깨질 수 있습니다');
 const home = readFileSync(join(root, 'index.html'), 'utf8');
-for (const id of ['toc', 'search', 'dailyVerse', 'training', 'trainPanel', 'trainMini']) {
+for (const id of ['toc', 'search', 'searchChapter', 'dailyVerse', 'training', 'trainPanel', 'trainMini']) {
   if (!home.includes(`id="${id}"`)) fail(`index.html: #${id} 없음`);
 }
 // 독송 플랜 — 마음 단련 연동 (주차별 목표·완주 보상)
