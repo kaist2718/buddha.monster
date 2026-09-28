@@ -35,6 +35,8 @@ data/
 assets/
   site.css          스타일 (라이트/다크 테마 · 반응형 · 인쇄용)
   app.js            공통 스크립트 (테마 선택·TTS 낭독·번역 토글·인용 복사·검색·sw 등록)
+  train.js          마음 단련 — 수련 레벨·경험치·연속 수련·배지·26주 플랜 연동
+                    (주차별 목표·완주 보상·레벨업 축하 효과, localStorage 기록)
   fonts/            Pretendard 서브셋 (tools/make-font-subset.py 로 생성)
 manifest.webmanifest · sw.js   PWA — 설치형 앱 · 오프라인 핵심 캐시
 docs/              기획 자료 — MONETIZATION(수익화 기획서) · ROADMAP(제품 로드맵) — 배포 대상 아님
@@ -69,6 +71,8 @@ s.setAttribute('data-domain', 'buddha.monster');
   `n`과 `nEnd`로 범위를 표시합니다(예: 58–59, 229–230 — 9곳).
 - 우리말 번역은 블록 시작 번호를 키로 씁니다(총 414개 블록 = 423게송 번호 커버).
 - 품별 해설·실천 문장은 `data/chapters.js` 한 곳에서 관리합니다.
+- 「마음 단련」 수련 기록은 브라우저 localStorage(`buddha.train`)에만 저장하며 서버로 전송하지 않습니다.
+  기기 변경 시 홈 「마음 단련」의 기록 내보내기·가져오기로 옮길 수 있습니다.
 
 ## 콘텐츠를 고치면
 

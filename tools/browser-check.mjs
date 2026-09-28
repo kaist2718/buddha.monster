@@ -67,14 +67,14 @@ const evaluate = async (expr) => {
 
 // 4) 페이지별 확인
 const pages = [
-  { path: '/', verses: 0, ids: ['toc', 'search', 'dailyVerse'] },
-  { path: '/chapters/01.html', verses: 20, ids: [] },
+  { path: '/', verses: 0, ids: ['toc', 'search', 'dailyVerse', 'training', 'trainPanel', 'trainMini'] },
+  { path: '/chapters/01.html', verses: 20, ids: ['trainStrip'] },
   // 229–230 은 원전에서 한 단락(병합 게송)이라 블록 13개가 맞습니다.
   { path: '/chapters/17.html', verses: 13, ids: [] },
   { path: '/chapters/26.html', verses: 41, ids: [] },
   { path: '/sources.html', verses: 0, ids: [] },
   { path: '/glossary.html', verses: 0, ids: [] },
-  { path: '/plan.html', verses: 0, ids: [] },
+  { path: '/plan.html', verses: 0, ids: ['planTrain'] },
   { path: '/privacy.html', verses: 0, ids: [] },
   { path: '/terms.html', verses: 0, ids: [] },
   { path: '/about.html', verses: 0, ids: [] },
@@ -92,9 +92,37 @@ for (const spec of pages) {
       themeBtns: document.querySelectorAll('[data-theme-option]').length,
       missingIds: ${JSON.stringify(spec.ids)}.filter(id => !document.getElementById(id)),
       brokenCss: getComputedStyle(document.body).fontFamily.length === 0,
+      train: (function () {
+        var panel = document.getElementById('trainPanel');
+        var mini = document.getElementById('trainMini');
+        var strip = document.getElementById('trainStrip');
+        var s = null; try { s = JSON.parse(localStorage.getItem('buddha.train')); } catch (e) {}
+        return {
+          panelKids: panel ? panel.children.length : -1,
+          miniKids: mini ? mini.children.length : -1,
+          stripKids: strip ? strip.children.length : -1,
+          xp: s ? s.xp : -1,
+          quests: document.querySelectorAll('.train-quest').length,
+          weeks: document.querySelectorAll('.week-item[data-week]').length,
+          planKids: (document.getElementById('planTrain') || { children: [] }).children.length,
+        };
+      })(),
     };
   })()`);
   const problems = [];
+  if (info.train) {
+    if (spec.path === '/') {
+      if (info.train.miniKids < 1) problems.push('수련 미니 카드 미표시');
+      if (info.train.panelKids < 3) problems.push('수련 패널 미표시');
+      if (info.train.quests !== 6) problems.push(`오늘의 수련 과제 ${info.train.quests} ≠ 6`);
+    }
+    if (spec.verses && info.train.stripKids < 1) problems.push('수련 스트립 미표시');
+    if (spec.path === '/plan.html') {
+      if (info.train.planKids < 1) problems.push('플랜 수련 패널 미표시');
+      if (info.train.weeks !== 26) problems.push(`주차 표시 ${info.train.weeks} ≠ 26`);
+    }
+    if (info.train.xp <= 0) problems.push('마음 단련 기록 없음');
+  } else problems.push('수련 시스템 점검 실패');
   if (!info.title) problems.push('title 없음');
   if (!info.h1.trim()) problems.push('h1 없음');
   if (spec.verses && info.verses !== spec.verses) problems.push(`게송 ${info.verses} ≠ ${spec.verses}`);

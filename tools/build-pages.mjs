@@ -105,6 +105,7 @@ ${body}
     <p class="foot-links"><a href="${p}index.html">홈</a> · <a href="${p}sources.html">영어 원문 자료실</a> · <a href="${p}glossary.html">용어 사전</a> · <a href="${p}plan.html">독송 플랜</a> · <a href="${p}about.html">이 책에 대하여</a> · <a href="${p}privacy.html">개인정보처리방침</a> · <a href="${p}terms.html">이용약관</a></p>
   </div>
 </footer>
+<script src="${p}assets/train.js"></script>
 <script src="${p}assets/app.js"></script>
 </body>
 </html>
@@ -166,6 +167,7 @@ for (const ch of en.chapters) {
   <section class="verses" aria-label="게송 본문">
 ${versesHtml}
   </section>
+  <aside id="trainStrip" aria-label="마음 단련 수련 현황"></aside>
   <nav class="chapter-nav" aria-label="이전/다음 품">
     ${prev ? `<a class="btn btn-ghost" href="${String(prev.num).padStart(2, '0')}.html">← 제${prev.num}품 ${esc(prev.ko)}</a>` : '<span></span>'}
     <a class="btn btn-primary" href="../index.html#toc">목차</a>

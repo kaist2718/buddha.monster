@@ -19,6 +19,7 @@ const FILES = [
   '404.html',
   'assets/site.css',
   'assets/app.js',
+  'assets/train.js',
   'data/search-index.js',
   'data/chapters.js',
 ];
