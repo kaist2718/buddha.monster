@@ -56,39 +56,171 @@
     });
   });
 
-  // ── 영어 낭독 (speechSynthesis) ────────────────────────
+  // ── 영어 낭독 (speechSynthesis) ──────────────────────
+  // 게송 단위 대기열로 재생해 일시정지·이어듣기·정지를 모두 지원합니다.
+  // (한 덩어리로 길게 읽으면 음성합성이 중간에 끊기는 경우가 있어 문장 단위로 나눕니다)
   guard('tts', function () {
     if (!('speechSynthesis' in window)) return;
 
-    function speak(text, btn) {
-      window.speechSynthesis.cancel();
-      document.querySelectorAll('[data-speaking="true"]').forEach(function (b) {
-        b.removeAttribute('data-speaking');
+    var session = { items: [], i: 0, mode: 'idle', chapter: false }; // idle|playing|paused|stopped
+    var gen = 0; // 이전 재생의 콜백이 새 재생을 건드리지 않게 하는 표식
+    var bar = null, statusEl = null, pauseBtn = null, keepAlive = 0;
+
+    // 긴 게송은 문장 단위로 나눠 재생합니다
+    function splitSpeech(text) {
+      var parts = text.match(/[^.!?]+[.!?]*/g) || [text];
+      var chunks = [], buf = '';
+      parts.forEach(function (s) {
+        if (buf && (buf + s).length > 180) { chunks.push(buf.trim()); buf = ''; }
+        buf += s;
       });
-      var u = new SpeechSynthesisUtterance(text);
+      if (buf.trim()) chunks.push(buf.trim());
+      return chunks.length ? chunks : [text];
+    }
+
+    function ensureBar() {
+      if (bar) return;
+      bar = document.createElement('div');
+      bar.className = 'tts-bar';
+      bar.setAttribute('role', 'status');
+      bar.setAttribute('aria-live', 'polite');
+      bar.innerHTML =
+        '<span class="tts-bar-status"></span>' +
+        '<button class="tts-bar-btn" type="button" data-tts-pause aria-label="낭독 일시정지 또는 이어서 듣기">일시정지</button>' +
+        '<button class="tts-bar-btn" type="button" data-tts-stop aria-label="낭독 정지">정지</button>';
+      document.body.appendChild(bar);
+      statusEl = bar.querySelector('.tts-bar-status');
+      pauseBtn = bar.querySelector('[data-tts-pause]');
+      pauseBtn.addEventListener('click', togglePause);
+      bar.querySelector('[data-tts-stop]').addEventListener('click', stop);
+    }
+
+    function clearSpeaking() {
+      document.querySelectorAll('.verse.speaking').forEach(function (v) { v.classList.remove('speaking'); });
+      document.querySelectorAll('[data-speaking="true"]').forEach(function (b) { b.removeAttribute('data-speaking'); });
+    }
+
+    function setBtnLabel() {
+      document.querySelectorAll('[data-tts-all]').forEach(function (b) {
+        if (session.chapter && (session.mode === 'playing' || session.mode === 'paused')) b.textContent = '낭독 정지';
+        else if (session.chapter && session.mode === 'stopped' && session.i > 0 && session.i < session.items.length) {
+          b.textContent = '이어듣기 — ' + session.items[session.i].num + '게송부터';
+        } else b.textContent = '이 품 영어 낭독';
+      });
+    }
+
+    function updateBar() {
+      ensureBar();
+      var active = session.mode === 'playing' || session.mode === 'paused';
+      bar.classList.toggle('show', active);
+      if (active) {
+        var cur = session.items[Math.min(session.i, session.items.length - 1)];
+        statusEl.textContent = (session.mode === 'paused' ? '일시정지 중' : '낭독 중') + ' · ' +
+          Math.min(session.i + 1, session.items.length) + ' / ' + session.items.length +
+          (cur ? ' · ' + cur.num + '게송' : '');
+        pauseBtn.textContent = session.mode === 'paused' ? '이어서 듣기' : '일시정지';
+      }
+      setBtnLabel();
+    }
+
+    function stop() {
+      gen++;
+      window.speechSynthesis.cancel();
+      clearInterval(keepAlive);
+      session.mode = (session.chapter && session.i > 0 && session.i < session.items.length) ? 'stopped' : 'idle';
+      clearSpeaking();
+      updateBar();
+    }
+
+    function playFrom(idx) {
+      gen++;
+      window.speechSynthesis.cancel();
+      clearInterval(keepAlive);
+      session.i = idx;
+      session.mode = 'playing';
+      speakNext();
+      updateBar();
+    }
+
+    function speakNext() {
+      if (session.mode !== 'playing') return;
+      if (session.i >= session.items.length) {
+        session.mode = 'idle';
+        clearInterval(keepAlive);
+        clearSpeaking();
+        updateBar();
+        return;
+      }
+      var myGen = gen;
+      var item = session.items[session.i];
+      clearSpeaking();
+      if (item.el) {
+        item.el.classList.add('speaking');
+        var vb = item.el.querySelector('.tts-btn');
+        if (vb) vb.setAttribute('data-speaking', 'true');
+      }
+      var u = new SpeechSynthesisUtterance(item.text);
       u.lang = 'en-US';
       u.rate = 0.92;
-      if (btn) {
-        btn.setAttribute('data-speaking', 'true');
-        u.onend = function () { btn.removeAttribute('data-speaking'); };
-        u.onerror = function () { btn.removeAttribute('data-speaking'); };
-      }
+      u.onend = function () {
+        if (myGen !== gen || session.mode === 'idle' || session.mode === 'stopped') return;
+        session.i += 1;
+        speakNext();
+      };
+      u.onerror = u.onend;
       window.speechSynthesis.speak(u);
+      updateBar();
+    }
+
+    function togglePause() {
+      if (session.mode === 'playing') {
+        window.speechSynthesis.pause();
+        session.mode = 'paused';
+        // Chrome 은 일시정지가 오래되면 풀리는 경우가 있어 일시정지를 되풀이해 붙잡아 둡니다
+        keepAlive = setInterval(function () { window.speechSynthesis.pause(); }, 5000);
+      } else if (session.mode === 'paused') {
+        clearInterval(keepAlive);
+        session.mode = 'playing';
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) window.speechSynthesis.resume();
+        else speakNext(); // 끊긴 뒤에는 이어서 다시 재생
+      }
+      updateBar();
     }
 
     document.addEventListener('click', function (e) {
       var btn = e.target.closest ? e.target.closest('.tts-btn, [data-tts-all]') : null;
       if (!btn) return;
       if (btn.hasAttribute('data-tts-all')) {
-        var verses = Array.prototype.map.call(
-          btn.closest('.chapter').querySelectorAll('.verse-en'),
-          function (p) { return p.textContent.trim(); }
-        );
-        speak(verses.join('. '), btn);
+        // 재생 중이면 정지(이어듣기 지점 남김), 멈춘 곳이 있으면 이어서, 그 외에는 처음부터
+        if (session.chapter && (session.mode === 'playing' || session.mode === 'paused')) { stop(); return; }
+        if (session.chapter && session.mode === 'stopped' && session.i > 0 && session.i < session.items.length) {
+          playFrom(session.i);
+          return;
+        }
+        var chapter = btn.closest('.chapter');
+        if (!chapter) return;
+        var items = [];
+        chapter.querySelectorAll('.verse').forEach(function (art) {
+          var p = art.querySelector('.verse-en');
+          if (!p) return;
+          var num = art.getAttribute('data-verse') || '';
+          splitSpeech(p.textContent.trim()).forEach(function (t) {
+            items.push({ text: t, el: art, num: num });
+          });
+        });
+        if (!items.length) return;
+        session.items = items;
+        session.chapter = true;
+        playFrom(0);
       } else {
         var art = btn.closest('.verse');
         var p = art && art.querySelector('.verse-en');
-        if (p) speak(p.textContent.trim(), btn);
+        if (!p) return;
+        session.items = splitSpeech(p.textContent.trim()).map(function (t) {
+          return { text: t, el: art, num: art.getAttribute('data-verse') || '' };
+        });
+        session.chapter = false;
+        playFrom(0);
       }
     });
   });
@@ -294,42 +426,108 @@
     box.appendChild(link);
   });
 
-  // ── 홈: 게송 검색 ─────────────────────────────────────
+  // ── 홈: 게송 검색 (초성 검색 · 오타 보정 포함) ─────────
   guard('search', function () {
     var input = document.getElementById('searchInput');
     var out = document.getElementById('searchResults');
     if (!input || !out || !window.DHP_INDEX) return;
 
+    // 초성 검색 — 한글 음절에서 첫소리만 뽑아 대조합니다 (예: ㅎㄴ → 하늘)
+    var CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+    function chosung(s) {
+      var r = '';
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charCodeAt(i);
+        if (c >= 0xac00 && c <= 0xd7a3) r += CHO.charAt(Math.floor((c - 0xac00) / 588));
+        else if ((c >= 0x3131 && c <= 0x314e) || c === 32) r += s.charAt(i);
+      }
+      return r;
+    }
+
+    // 오타 보정 — 편집 거리(넣기·지우기·바꾸기·인접 뒤바꿈)가 max 이하이면 같은 낱말로 봅니다
+    function isNear(a, b, max) {
+      if (Math.abs(a.length - b.length) > max) return false;
+      var prevPrev = null, prev = [], cur = [];
+      for (var j = 0; j <= b.length; j++) prev.push(j);
+      for (var i = 1; i <= a.length; i++) {
+        cur = [i];
+        var rowMin = i;
+        for (var k = 1; k <= b.length; k++) {
+          var cost = a.charAt(i - 1) === b.charAt(k - 1) ? 0 : 1;
+          var v = Math.min(prev[k] + 1, cur[k - 1] + 1, prev[k - 1] + cost);
+          if (i > 1 && k > 1 && a.charAt(i - 1) === b.charAt(k - 2) && a.charAt(i - 2) === b.charAt(k - 1)) {
+            v = Math.min(v, prevPrev[k - 2] + 1); // 인접 글자 뒤바꿈
+          }
+          cur[k] = v;
+          if (v < rowMin) rowMin = v;
+        }
+        if (rowMin > max) return false; // 이미 넘었으면 그만
+        prevPrev = prev;
+        prev = cur;
+      }
+      return prev[b.length] <= max;
+    }
+
     var flat = [];
     window.DHP_INDEX.forEach(function (ch) {
       ch.verses.forEach(function (v) {
-        flat.push({ n: v.n, nEnd: v.nEnd, en: v.en, ko: v.ko, ch: ch.num, chKo: ch.ko });
+        var enL = v.en.toLowerCase();
+        var koL = String(v.ko || '').toLowerCase();
+        flat.push({
+          n: v.n, nEnd: v.nEnd, en: v.en, ko: v.ko, ch: ch.num, chKo: ch.ko,
+          enL: enL, koL: koL,
+          cho: chosung(String(v.ko || '')),
+          words: (enL + ' ' + koL).split(/[^a-z0-9가-힣']+/).filter(Boolean),
+        });
       });
     });
 
     function render(q) {
       q = q.trim().toLowerCase();
       if (q.length < 1) {
-        out.innerHTML = '<p class="search-note">단어나 문장을 입력하면 423게송에서 찾아 드립니다. (예: hatred, 행복, mind, shadow)</p>';
+        out.innerHTML = '<p class="search-note">단어나 문장을 입력하면 423게송에서 찾아 드립니다. 한글 초성(예: ㅎㄴ)과 오타(예: hatread)도 찾아 드립니다.</p>';
         return;
       }
-      var hits = flat.filter(function (v) {
-        return v.en.toLowerCase().indexOf(q) >= 0 || v.ko.indexOf(q) >= 0;
-      }).slice(0, 30);
+      var tokens = q.split(/\s+/).filter(Boolean);
+      var choseong = /^[ㄱ-ㅎ\s]+$/.test(q);
+      var hits = [];
+      for (var i = 0; i < flat.length; i++) {
+        var v = flat[i];
+        var score = 0, matchedAll = true;
+        for (var t = 0; t < tokens.length; t++) {
+          var tok = tokens[t], s = 0;
+          if (choseong) {
+            if (v.cho.indexOf(tok) >= 0) s = 2; // 초성 검색
+          } else if (v.enL.indexOf(tok) >= 0 || v.koL.indexOf(tok) >= 0) {
+            s = 3; // 정확히 들어 있는 낱말
+          } else if (tok.length >= 3) {
+            var max = tok.length >= 5 ? 2 : 1; // 긴 낱말일수록 오타를 넉넉히 허용
+            for (var w = 0; w < v.words.length; w++) {
+              if (Math.abs(v.words[w].length - tok.length) <= max && isNear(v.words[w], tok, max)) { s = 1; break; }
+            }
+          }
+          if (!s) { matchedAll = false; break; }
+          score += s;
+        }
+        if (matchedAll) hits.push({ v: v, score: score });
+      }
+      hits.sort(function (a, b) { return b.score - a.score || a.v.n - b.v.n; });
+      hits = hits.slice(0, 30);
       if (!hits.length) {
-        out.innerHTML = '<p class="search-note">찾는 게송이 없습니다. 다른 낱말로 다시 찾아 보세요.</p>';
+        out.innerHTML = '<p class="search-note">찾는 게송이 없습니다. 다른 낱말로 다시 찾아 보세요. 한글 초성(예: ㅎㄴ)도 쓸 수 있습니다.</p>';
         return;
       }
-      out.innerHTML = hits.map(function (v) {
+      out.innerHTML = hits.map(function (h) {
+        var v = h.v;
         var numLabel = v.nEnd !== v.n ? v.n + '–' + v.nEnd : String(v.n);
         return '<a class="search-hit" href="chapters/' + String(v.ch).padStart(2, '0') + '.html#v' + v.n + '">' +
           '<span class="hit-num">' + numLabel + '</span><span class="hit-ch">제' + v.ch + '품 ' + v.chKo + '</span>' +
           '<span class="hit-en" lang="en"></span><span class="hit-ko"></span></a>';
       }).join('');
       var nodes = out.querySelectorAll('.search-hit');
-      hits.forEach(function (v, i) {
-        nodes[i].querySelector('.hit-en').textContent = v.en;
-        nodes[i].querySelector('.hit-ko').textContent = v.ko;
+      hits.forEach(function (h, i) {
+        nodes[i].querySelector('.hit-en').textContent = h.v.en;
+        nodes[i].querySelector('.hit-ko').textContent = h.v.ko;
       });
     }
 

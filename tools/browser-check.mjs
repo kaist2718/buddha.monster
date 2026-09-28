@@ -107,6 +107,26 @@ for (const spec of pages) {
           planKids: (document.getElementById('planTrain') || { children: [] }).children.length,
         };
       })(),
+      search: (function () {
+        var input = document.getElementById('searchInput');
+        var results = document.getElementById('searchResults');
+        if (!input || !results) return null;
+        function count(q) {
+          input.value = q;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          return results.querySelectorAll('.search-hit').length;
+        }
+        return { exact: count('hatred'), choseong: count('ㅎㄴ'), typo: count('hatread'), none: count('zzqqxxzz') };
+      })(),
+      ttsBar: (function () {
+        var btn = document.querySelector('[data-tts-all]');
+        if (!btn) return null;
+        btn.click();
+        return {
+          created: !!document.querySelector('.tts-bar [data-tts-pause]'),
+          stopBtn: !!document.querySelector('.tts-bar [data-tts-stop]'),
+        };
+      })(),
     };
   })()`);
   const problems = [];
@@ -123,6 +143,16 @@ for (const spec of pages) {
     }
     if (info.train.xp <= 0) problems.push('마음 단련 기록 없음');
   } else problems.push('수련 시스템 점검 실패');
+  if (info.search) {
+    if (info.search.exact < 1) problems.push('검색: 정확 일치 실패');
+    if (info.search.choseong < 1) problems.push('검색: 초성 검색 실패');
+    if (info.search.typo < 1) problems.push('검색: 오타 보정 실패');
+    if (info.search.none > 0) problems.push('검색: 없는 낱말에도 결과 표시');
+  }
+  if (info.ttsBar) {
+    if (!info.ttsBar.created) problems.push('낭독 제어 바 미표시');
+    if (!info.ttsBar.stopBtn) problems.push('낭독 정지 단추 없음');
+  }
   if (!info.title) problems.push('title 없음');
   if (!info.h1.trim()) problems.push('h1 없음');
   if (spec.verses && info.verses !== spec.verses) problems.push(`게송 ${info.verses} ≠ ${spec.verses}`);

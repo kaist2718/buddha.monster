@@ -104,5 +104,22 @@ if (definedTerms !== termEls) fail(`glossary.html: 용어 ${termEls}개 중 구�
 if (!glossary.includes(`어휘 ${termEls}선`)) fail(`glossary.html: 「어휘 ${termEls}선」 표기가 실제 용어 수와 다릅니다`);
 ok(`구조화 데이터(JSON-LD) 확인 — 용어 사전 ${definedTerms}개`);
 
+// 6) sitemap — 공개 페이지 전체 수록 · lastmod · noindex 페이지 제외
+const sitemap = readFileSync(join(root, 'sitemap.xml'), 'utf8');
+const locs = new Set([...sitemap.matchAll(/<loc>https:\/\/buddha\.monster\/([^<]*)<\/loc>/g)].map((m) => m[1] || 'index.html'));
+const indexable = ['index.html', 'sources.html', 'glossary.html', 'plan.html', 'about.html', ...pages.map((f) => 'chapters/' + f)];
+for (const p of indexable) {
+  if (!locs.has(p)) fail(`sitemap.xml: ${p} 누락`);
+}
+for (const p of ['privacy.html', 'terms.html', '404.html']) {
+  if (locs.has(p)) fail(`sitemap.xml: noindex 페이지 ${p} 는 넣지 않습니다`);
+}
+const urlBlocks = [...sitemap.matchAll(/<url>[\s\S]*?<\/url>/g)].map((m) => m[0]);
+if (urlBlocks.length !== indexable.length) fail(`sitemap.xml: URL ${urlBlocks.length}개 — ${indexable.length}이어야 합니다`);
+for (const b of urlBlocks) {
+  if (!/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/.test(b)) fail('sitemap.xml: lastmod 없는 URL — ' + b.slice(0, 80));
+}
+ok(`sitemap 확인 — ${locs.size}개 URL · lastmod 포함`);
+
 console.log(errors ? `\n${errors}개 문제 발견` : '\n모든 검증 통과');
 process.exit(errors ? 1 : 0);

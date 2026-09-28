@@ -8,15 +8,15 @@
 ## 시작하기
 
 ```bash
-node tools/build-pages.mjs   # 챕터 26페이지 + 검색 데이터 생성
-node tools/verify.mjs        # 게송 수·번역 누락·링크 검증
+npm run build                # 챕터 26페이지 + 검색 데이터 + sitemap.xml 생성
+node tools/verify.mjs        # 게송 수·번역 누락·링크·구조화 데이터·sitemap 검증
 node tools/browser-check.mjs # 헤드리스 Chrome 렌더링 확인 (선택)
 ```
 
 ## 구조
 
 ```
-index.html          홈 — 표지 · 오늘의 법구 · 26품 목차 · 게송 검색
+index.html          홈 — 표지 · 오늘의 법구 · 26품 목차 · 게송 검색(초성·오타 보정)
 sources.html        영어로 읽는 법구경 자료실 (영어 원문 사이트 8곳 안내)
 glossary.html       용어 사전 — 법구경 핵심 어휘 팔리어·영어·한국어 32선
 plan.html           26주 독송 플랜 — 6개월 완주 로드맵
@@ -26,6 +26,7 @@ terms.html          이용약관
 404.html            없는 주소 안내 (GitHub Pages 커스텀 404)
 chapters/           생성된 품별 페이지 26개 (제1품 ~ 제26품)
                     — 게송마다 팔리어 원문 · 영어 원문 · 우리말 번역 병기
+                    — 영어 낭독(게송별 재생 · 일시정지 · 이어듣기)
 data/
   verses-en.json    영어 원문 — F. Max Müller(1881, 공중도메인)
   verses-pali.json  팔리어 원문 — SuttaCentral bilara-data(Mahāsaṅgīti)
@@ -40,8 +41,9 @@ assets/
   fonts/            Pretendard 서브셋 (tools/make-font-subset.py 로 생성)
 manifest.webmanifest · sw.js   PWA — 설치형 앱 · 오프라인 핵심 캐시
 docs/              기획 자료 — MONETIZATION(수익화 기획서) · ROADMAP(제품 로드맵) — 배포 대상 아님
-tools/              parse-source · parse-pali · build-pages · verify · browser-check
-                    · serve · stage-site · font-charset · make-font-subset · make-icons
+tools/              parse-source · parse-pali · build-pages · build-sitemap · verify
+                    · browser-check · serve · stage-site · font-charset
+                    · make-font-subset · make-icons
 _source/            Gutenberg 원문 · SuttaCentral 팔리어 원문 (파싱 입력 — 배포 대상 아님)
 CNAME · robots.txt · sitemap.xml · icon.svg · icon-*.png · og.png
 ```
@@ -77,7 +79,7 @@ s.setAttribute('data-domain', 'buddha.monster');
 ## 콘텐츠를 고치면
 
 1. `data/ko-*.js` 또는 `data/chapters.js` 수정
-2. `node tools/build-pages.mjs` — 챕터 페이지 재생성
+2. `npm run build` — 챕터 페이지·검색 데이터·sitemap.xml 재생성
 3. `python tools/make-font-subset.py` — 새 글자가 생겼으면 서브셋 재생성
 4. `node tools/verify.mjs` — 검증 통과 확인
 5. `npm run stage` — 배포본 점검 후 커밋·푸시 (CI 와 배포 워크플로가 자동 실행됩니다)

@@ -377,6 +377,27 @@ a:hover { text-decoration: underline; }
 }
 .to-top.show { opacity: 1; pointer-events: auto; }
 
+/* ── 영어 낭독 제어 바 (일시정지 · 이어듣기 · 정지) ────── */
+.tts-bar {
+  position: fixed; left: 50%; bottom: 24px; z-index: 70;
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow); transition: opacity .2s ease, transform .2s ease;
+}
+.tts-bar.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.tts-bar-status { color: var(--text-soft); font-size: .86rem; font-weight: 700; white-space: nowrap; }
+.tts-bar-btn {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text); font-size: .8rem; font-weight: 700; cursor: pointer;
+}
+.tts-bar-btn:hover { border-color: var(--accent); color: var(--text); }
+.verse.speaking {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 /* ── 모바일 하단 탭바 ──────────────────────────────────── */
 .tab-bar { display: none; }
 @media (max-width: 860px) {
@@ -595,6 +616,11 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 860px) {
+  .tts-bar {
+    left: 12px; right: 12px; bottom: 84px; transform: translateY(16px);
+    justify-content: space-between;
+  }
+  .tts-bar.show { transform: translateY(0); }
   .train-stats { grid-template-columns: repeat(2, 1fr); }
   .train-badges { grid-template-columns: repeat(2, 1fr); }
   .train-quests { grid-template-columns: 1fr; }
@@ -621,7 +647,7 @@ a:hover { text-decoration: underline; }
 /* ── 인쇄 ───────────────────────────────────────────────── */
 @media print {
   .site-header, .site-footer, .chapter-tools, .tts-btn, .chapter-nav, .skip-link,
-  .train-mini, .train-strip, .train-toast, .train-fx, .week-chip { display: none !important; }
+  .train-mini, .train-strip, .train-toast, .train-fx, .week-chip, .tts-bar { display: none !important; }
   body { background: #fff; color: #000; font-size: 12pt; }
   .verse, .card, .daily { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
   .hero { background: none; }

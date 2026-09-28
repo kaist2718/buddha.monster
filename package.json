@@ -9,7 +9,8 @@
   },
   "scripts": {
     "serve": "node tools/serve.mjs",
-    "build": "node tools/build-pages.mjs",
+    "build": "node tools/build-pages.mjs && node tools/build-sitemap.mjs",
+    "sitemap": "node tools/build-sitemap.mjs",
     "verify": "node tools/verify.mjs",
     "check:browser": "node tools/browser-check.mjs",
     "stage": "node tools/stage-site.mjs",
