@@ -116,6 +116,123 @@
     });
   });
 
+  // ── 읽기 진행률 + 맨 위로 ────────────────────────
+  guard('progress', function () {
+    var bar = document.createElement('div');
+    bar.className = 'read-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    bar.innerHTML = '<span class="read-bar-fill"></span>';
+    document.body.appendChild(bar);
+    var fill = bar.firstChild;
+    var top = document.createElement('button');
+    top.className = 'to-top';
+    top.type = 'button';
+    top.setAttribute('aria-label', '맨 위로');
+    top.textContent = '↑';
+    document.body.appendChild(top);
+    top.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    function onScroll() {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      fill.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      top.classList.toggle('show', window.scrollY > 500);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  });
+
+  // ── 모바일 하단 탭바 ──────────────────────────────
+  guard('mobile-tab', function () {
+    var scripts = document.getElementsByTagName('script');
+    var src = scripts.length ? scripts[scripts.length - 1].src : '';
+    var base = src.replace(/assets\/app\.js.*$/, '');
+    if (!base) base = './';
+    var isChapters = /\/chapters\//.test(location.pathname);
+    var p = isChapters ? '../' : base;
+    var items = [
+      { href: p + 'index.html', icon: '🏠', label: '홈' },
+      { href: p + 'index.html#toc', icon: '📖', label: '목차' },
+      { href: p + 'index.html#search', icon: '🔍', label: '검색' },
+      { href: p + 'plan.html', icon: '📅', label: '플랜' },
+      { href: p + 'glossary.html', icon: '📿', label: '사전' },
+    ];
+    var nav = document.createElement('nav');
+    nav.className = 'tab-bar';
+    nav.setAttribute('aria-label', '빠른 이동');
+    nav.innerHTML = items.map(function (it) {
+      return '<a href="' + it.href + '"><span aria-hidden="true">' + it.icon + '</span><span>' + it.label + '</span></a>';
+    }).join('');
+    document.body.appendChild(nav);
+  });
+
+  // ── 글자 크기 조절 ────────────────────────────────
+  guard('fontsize', function () {
+    var KEY = 'buddha.fontsize';
+    var sizes = ['100%', '112%', '125%'];
+    var idx = 0;
+    try { idx = Number(localStorage.getItem(KEY)) || 0; } catch (e) {}
+    function apply() {
+      document.documentElement.style.fontSize = sizes[idx] || sizes[0];
+      document.querySelectorAll('[data-font-step]').forEach(function (b) {
+        b.textContent = '글자 ' + ['보통', '큼', '가장 큼'][idx];
+      });
+    }
+    apply();
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-font-step]') : null;
+      if (!btn) return;
+      idx = (idx + 1) % sizes.length;
+      try { localStorage.setItem(KEY, String(idx)); } catch (err) {}
+      apply();
+    });
+  });
+
+  // ── 암송 모드 (본문 가리기 → 눌러서 확인) ─────────
+  guard('memorize', function () {
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-memorize-toggle]') : null;
+      if (btn) {
+        var on = document.body.getAttribute('data-memorize') === 'true';
+        document.body.setAttribute('data-memorize', on ? 'false' : 'true');
+        btn.textContent = on ? '암송 모드' : '암송 모드 끄기';
+        btn.setAttribute('aria-pressed', on ? 'false' : 'true');
+        if (!on) {
+          document.querySelectorAll('.verse.revealed').forEach(function (v) {
+            v.classList.remove('revealed');
+          });
+        }
+        return;
+      }
+      if (document.body.getAttribute('data-memorize') !== 'true') return;
+      var verse = e.target.closest ? e.target.closest('.verse') : null;
+      if (verse) verse.classList.toggle('revealed');
+    });
+  });
+
+  // ── 이어 읽기 (마지막으로 읽은 게송 기억) ──────────
+  guard('resume', function () {
+    var KEY = 'buddha.lastRead';
+    var verseEl = document.querySelector('.verse[data-verse]');
+    if (verseEl) {
+      // 챕터 페이지: 읽기 시작한 게송 기록
+      var ch = (location.pathname.match(/(\d{2})\.html/) || [])[1];
+      if (ch) {
+        try {
+          localStorage.setItem(KEY, JSON.stringify({ ch: ch, n: verseEl.getAttribute('data-verse'), at: Date.now() }));
+        } catch (e) {}
+      }
+      return;
+    }
+    // 홈: 이어 읽기 카드
+    var box = document.getElementById('resumeBox');
+    if (!box) return;
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!saved || !saved.ch) return;
+    box.innerHTML = '<a class="btn btn-primary" href="chapters/' + saved.ch + '.html#v' + saved.n + '">이어 읽기 — 제' + Number(saved.ch) + '품 ' + saved.n + '게송 →</a>';
+  });
+
   // ── 서비스 워커 등록 (오프라인 캐시) ────────────────
   guard('sw', function () {
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

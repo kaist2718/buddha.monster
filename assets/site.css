@@ -158,6 +158,8 @@ a:hover { text-decoration: underline; }
 }
 .hero-lead { max-width: 62ch; color: var(--text-soft); font-size: 1.08rem; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 8px; }
+.resume-box { margin: -10px 0 0; }
+.resume-box .btn { font-size: .92rem; }
 
 .hero-stats {
   display: flex; flex-wrap: wrap; gap: 26px;
@@ -357,6 +359,52 @@ a:hover { text-decoration: underline; }
 .foot-title { font-weight: 800; margin-bottom: 8px; }
 .foot-note { color: var(--text-dim); font-size: .88rem; }
 .foot-links a { color: var(--text-soft); }
+
+/* ── 읽기 진행률 · 맨 위로 ──────────────────────────────── */
+.read-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
+  background: transparent; pointer-events: none;
+}
+.read-bar-fill {
+  display: block; height: 100%; width: 0;
+  background: var(--accent); transition: width .1s linear;
+}
+.to-top {
+  position: fixed; right: 20px; bottom: 84px; z-index: 55;
+  width: 46px; height: 46px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 1.15rem; cursor: pointer;
+  box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.to-top.show { opacity: 1; pointer-events: auto; }
+
+/* ── 모바일 하단 탭바 ──────────────────────────────────── */
+.tab-bar { display: none; }
+@media (max-width: 860px) {
+  .tab-bar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 58;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(10px); border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .tab-bar a {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: var(--text-soft); font-size: .68rem; font-weight: 700; padding: 4px 0;
+  }
+  .tab-bar a:hover { text-decoration: none; color: var(--accent); }
+  .tab-bar a span:first-child { font-size: 1.15rem; line-height: 1.2; }
+  body { padding-bottom: 76px; }
+  .to-top { bottom: 96px; }
+}
+
+/* ── 암송 모드 ────────────────────────────────────────── */
+[data-memorize="true"] .verse-en,
+[data-memorize="true"] .verse-ko,
+[data-memorize="true"] .verse-pali {
+  filter: blur(7px); user-select: none; cursor: pointer; transition: filter .18s ease;
+}
+[data-memorize="true"] .verse.revealed .verse-en,
+[data-memorize="true"] .verse.revealed .verse-ko,
+[data-memorize="true"] .verse.revealed .verse-pali { filter: none; user-select: text; }
 
 /* ── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 860px) {

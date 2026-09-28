@@ -20,6 +20,8 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="stylesheet" href="../assets/site.css">
+<!-- 방문 분석 (자체 호스팅 · 쿠키 미사용 · 설정은 assets/analytics.js 한 곳) -->
+<script defer src="../assets/analytics.js"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Book","name":"법구경 제19품 법주품(法住品)","alternateName":"The Just","inLanguage":["ko","en","pi"],"isPartOf":{"@type":"Book","name":"마음의 괴물을 다스리는 부처님 — 법구경(Dhammapada) 영어·한국어 대역","url":"https://buddha.monster/"},"description":"법구경 제19품 법주품(法住品)(Dhammaṭṭhavagga). 게송 256–272 팔리어 원문·영어 원문·우리말 번역, 품별 해설과 마음 다스리기 실천.","url":"https://buddha.monster/chapters/19.html"}</script>
 </head>
 <body>
@@ -61,6 +63,8 @@
       <button class="btn btn-ghost" type="button" data-tts-all>이 품 영어 낭독</button>
       <button class="btn btn-ghost" type="button" data-ko-toggle>우리말 가리기</button>
       <button class="btn btn-ghost" type="button" data-pali-toggle aria-pressed="true">팔리어 가리기</button>
+      <button class="btn btn-ghost" type="button" data-memorize-toggle aria-pressed="false">암송 모드</button>
+      <button class="btn btn-ghost" type="button" data-font-step>글자 보통</button>
       <button class="btn btn-ghost" type="button" onclick="window.print()">인쇄 · PDF</button>
     </div>
   </header>

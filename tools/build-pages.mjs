@@ -69,6 +69,8 @@ function page({ title, desc, canonical, body, extraHead = '', depth = 0 }) {
 <link rel="apple-touch-icon" href="${p}apple-touch-icon.png">
 <link rel="manifest" href="${p}manifest.webmanifest">
 <link rel="stylesheet" href="${p}assets/site.css">
+<!-- 방문 분석 (자체 호스팅 · 쿠키 미사용 · 설정은 assets/analytics.js 한 곳) -->
+<script defer src="${p}assets/analytics.js"></script>
 ${extraHead}
 </head>
 <body>
@@ -156,6 +158,8 @@ for (const ch of en.chapters) {
       <button class="btn btn-ghost" type="button" data-tts-all>이 품 영어 낭독</button>
       <button class="btn btn-ghost" type="button" data-ko-toggle>우리말 가리기</button>
       <button class="btn btn-ghost" type="button" data-pali-toggle aria-pressed="true">팔리어 가리기</button>
+      <button class="btn btn-ghost" type="button" data-memorize-toggle aria-pressed="false">암송 모드</button>
+      <button class="btn btn-ghost" type="button" data-font-step>글자 보통</button>
       <button class="btn btn-ghost" type="button" onclick="window.print()">인쇄 · PDF</button>
     </div>
   </header>

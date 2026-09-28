@@ -37,6 +37,7 @@ assets/
   app.js            공통 스크립트 (테마 선택·TTS 낭독·번역 토글·인용 복사·검색·sw 등록)
   fonts/            Pretendard 서브셋 (tools/make-font-subset.py 로 생성)
 manifest.webmanifest · sw.js   PWA — 설치형 앱 · 오프라인 핵심 캐시
+docs/              기획 자료 — MONETIZATION(수익화 기획서) · ROADMAP(제품 로드맵) — 배포 대상 아님
 tools/              parse-source · parse-pali · build-pages · verify · browser-check
                     · serve · stage-site · font-charset · make-font-subset · make-icons
 _source/            Gutenberg 원문 · SuttaCentral 팔리어 원문 (파싱 입력 — 배포 대상 아님)
@@ -51,6 +52,16 @@ CNAME · robots.txt · sitemap.xml · icon.svg · icon-*.png · og.png
   `tools/parse-pali.mjs`로 게송 번호별 데이터로 변환했습니다.
 - **우리말 번역·해설·실천 문장·용어 사전**: 이 사이트를 위해 새로 작성했습니다.
 - **서체**: Pretendard Variable(SIL OFL 1.1) — 사이트에 나오는 글자만 담은 자체 호스팅 서브셋.
+
+## 방문 분석
+
+자체 호스팅 분석 스크립트를 씁니다(쿠키 미사용 → 동의 배너 불필요).
+수집 서버 주소와 사이트 ID는 `assets/analytics.js` 한 곳에서 정합니다.
+
+```js
+s.src = 'https://visitor-analytics-a5bp.onrender.com/analytics.js';
+s.setAttribute('data-domain', 'buddha.monster');
+```
 
 ## 데이터 규칙
 
