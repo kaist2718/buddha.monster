@@ -175,7 +175,7 @@ ${versesHtml}
   </nav>
 </article>`;
 
-  // 구조화 데이터 — 검색엔진용 (Book + Chapter)
+  // 구조화 데이터 — 검색엔진용 (Book + BreadcrumbList)
   const jsonld = {
     '@context': 'https://schema.org',
     '@type': 'Book',
@@ -190,7 +190,16 @@ ${versesHtml}
     description: `법구경 제${ch.num}품 ${meta.koFull}(${meta.pali}). 게송 ${meta.from}–${meta.to} 팔리어 원문·영어 원문·우리말 번역, 품별 해설과 마음 다스리기 실천.`,
     url: `https://buddha.monster/chapters/${String(ch.num).padStart(2, '0')}.html`,
   };
-  const extraHead = `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>`;
+  const extraHead = `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>\n` +
+    `<script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: '홈', item: 'https://buddha.monster/' },
+        { '@type': 'ListItem', position: 2, name: '법구경 26품', item: 'https://buddha.monster/#toc' },
+        { '@type': 'ListItem', position: 3, name: `제${ch.num}품 ${meta.koFull}`, item: `https://buddha.monster/chapters/${String(ch.num).padStart(2, '0')}.html` },
+      ],
+    })}</script>`;
 
   writeFileSync(
     join(outDir, `${String(ch.num).padStart(2, '0')}.html`),

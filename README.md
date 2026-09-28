@@ -18,7 +18,7 @@ node tools/browser-check.mjs # 헤드리스 Chrome 렌더링 확인 (선택)
 ```
 index.html          홈 — 표지 · 오늘의 법구 · 26품 목차 · 게송 검색
 sources.html        영어로 읽는 법구경 자료실 (영어 원문 사이트 8곳 안내)
-glossary.html       용어 사전 — 법구경 핵심 어휘 팔리어·영어·한국어 30선
+glossary.html       용어 사전 — 법구경 핵심 어휘 팔리어·영어·한국어 32선
 plan.html           26주 독송 플랜 — 6개월 완주 로드맵
 about.html          이 책에 대하여 — 법구경 소개 · 사용법 · 저작권 안내
 privacy.html        개인정보처리방침

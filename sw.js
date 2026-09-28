@@ -1,12 +1,15 @@
 // 마음의 괴물을 다스리는 부처님 — 서비스 워커 (오프라인 핵심 캐시)
-const CACHE = 'buddha-v1';
+const CACHE = 'buddha-v2';
 const CORE = [
   './',
   './index.html',
   './assets/site.css',
   './assets/app.js',
+  './assets/train.js',
   './data/search-index.js',
+  './manifest.webmanifest',
   './icon.svg',
+  './apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (e) => {

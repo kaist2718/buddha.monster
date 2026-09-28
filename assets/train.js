@@ -451,6 +451,20 @@
         state.counters[k] = Math.max(state.counters[k], Number(data.counters[k]) || 0);
       });
     }
+    // 배지는 합집합으로 — 이미 가진 배지는 다시 주지 않으므로 경험치가 중복되지 않습니다
+    if (Array.isArray(data.badges)) {
+      data.badges.forEach(function (b) {
+        var known = BADGES.some(function (x) { return x.id === b; });
+        if (known && state.badges.indexOf(b) < 0) state.badges.push(b);
+      });
+    }
+    // 일일 제한 기록은 더 최근 날짜를 따릅니다 (YYYY-MM-DD 는 문자열 비교로 충분)
+    if (data.caps && typeof data.caps === 'object') {
+      Object.keys(data.caps).forEach(function (k) {
+        var v = String(data.caps[k] || '');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v) && (!state.caps[k] || v > state.caps[k])) state.caps[k] = v;
+      });
+    }
   }
 
   function resetData() {

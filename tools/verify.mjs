@@ -41,6 +41,7 @@ for (const p of pages) {
   if (!html.includes('id="trainStrip"')) fail(`${p}: 마음 단련 스트립(#trainStrip) 없음`);
   if (!html.includes('assets/train.js')) fail(`${p}: assets/train.js 미포함`);
   if (!html.includes('aria-label="테마 선택"')) fail(`${p}: 테마 선택 그룹의 aria-label 없음`);
+  if (!html.includes('"BreadcrumbList"')) fail(`${p}: 브레드크럼 구조화 데이터 없음`);
   for (const l of html.matchAll(/href="([^"#][^"]*)"/g)) links.add(l[1]);
 }
 if (verseEls === 414) ok(`챕터 페이지 게송 요소 414개(병합 게송 포함) — 실제: ${verseEls}`);
@@ -85,6 +86,23 @@ if (!plan.includes('id="planTrain"')) fail('plan.html: #planTrain 없음');
 if ((plan.match(/data-week="/g) || []).length !== 26) fail('plan.html: 주차 표시(data-week)가 26개여야 합니다');
 if (!plan.includes('assets/train.js')) fail('plan.html: assets/train.js 미포함');
 ok('홈·자료실·소개 페이지 구조 확인');
+
+// 5) 구조화 데이터(JSON-LD) — 검색엔진용 · 파싱 가능 여부까지 확인
+for (const p of ['index.html', 'sources.html', 'glossary.html', 'plan.html', 'about.html']) {
+  if (!readFileSync(join(root, p), 'utf8').includes('application/ld+json')) fail(`${p}: JSON-LD 구조화 데이터 없음`);
+}
+for (const p of ['index.html', 'sources.html', 'glossary.html', 'plan.html', 'about.html', 'privacy.html', 'terms.html', '404.html', ...pages.map((f) => 'chapters/' + f)]) {
+  const html = readFileSync(join(root, p), 'utf8');
+  for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+    try { JSON.parse(m[1]); } catch (e) { fail(`${p}: JSON-LD 파싱 실패 — ${e.message}`); }
+  }
+}
+const glossary = readFileSync(join(root, 'glossary.html'), 'utf8');
+const termEls = (glossary.match(/<li><strong>/g) || []).length;
+const definedTerms = (glossary.match(/"@type":"DefinedTerm"/g) || []).length;
+if (definedTerms !== termEls) fail(`glossary.html: 용어 ${termEls}개 중 구조화 데이터 ${definedTerms}개 — 수가 맞아야 합니다`);
+if (!glossary.includes(`어휘 ${termEls}선`)) fail(`glossary.html: 「어휘 ${termEls}선」 표기가 실제 용어 수와 다릅니다`);
+ok(`구조화 데이터(JSON-LD) 확인 — 용어 사전 ${definedTerms}개`);
 
 console.log(errors ? `\n${errors}개 문제 발견` : '\n모든 검증 통과');
 process.exit(errors ? 1 : 0);
