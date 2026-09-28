@@ -26,7 +26,11 @@ const ROOT_PAGES = [
   { file: 'about.html', priority: '0.7' },
 ];
 
-const today = () => new Date().toISOString().slice(0, 10);
+// 현지 날짜 — git 의 %cs(커밋 날짜)와 같은 기준이어야 재생성해도 값이 흔들리지 않습니다
+const today = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
 
 function lastmod(file) {
   try {
