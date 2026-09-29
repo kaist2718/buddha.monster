@@ -61,7 +61,7 @@ for (const l of links) {
 ok(`내부 링크 ${links.size}개 확인`);
 
 // 4) 홈·자료실·소개 페이지 구조
-for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'plan.html', 'privacy.html', 'terms.html', 'manifest.webmanifest', 'sw.js', 'assets/site.css', 'assets/app.js', 'assets/train.js', 'icon.svg']) {
+for (const p of ['index.html', 'sources.html', 'about.html', 'glossary.html', 'plan.html', 'privacy.html', 'terms.html', 'manifest.webmanifest', 'sw.js', 'feed.xml', 'assets/site.css', 'assets/app.js', 'assets/train.js', 'icon.svg']) {
   if (!existsSync(join(root, p))) fail(`파일 없음: ${p}`);
 }
 // 정적 페이지의 내부 링크 확인
@@ -91,6 +91,13 @@ const plan = readFileSync(join(root, 'plan.html'), 'utf8');
 if (!plan.includes('id="planTrain"')) fail('plan.html: #planTrain 없음');
 if ((plan.match(/data-week="/g) || []).length !== 26) fail('plan.html: 주차 표시(data-week)가 26개여야 합니다');
 if (!plan.includes('assets/train.js')) fail('plan.html: assets/train.js 미포함');
+// 검색엔진 등록 — 소유 확인 메타태그·네이버 RSS 제출용 feed.xml
+const feed = readFileSync(join(root, 'feed.xml'), 'utf8');
+if (!feed.includes('<rss version="2.0"')) fail('feed.xml: RSS 2.0 형식이 아닙니다');
+if ((feed.match(/<item>/g) || []).length !== 26) fail('feed.xml: 품별 아이템이 26개여야 합니다');
+if (!home.includes('name="google-site-verification"')) fail('index.html: google-site-verification 메타태그 없음');
+if (!home.includes('name="naver-site-verification"')) fail('index.html: naver-site-verification 메타태그 없음');
+if (!home.includes('type="application/rss+xml"')) fail('index.html: feed.xml 자동 발견 링크 없음');
 ok('홈·자료실·소개 페이지 구조 확인');
 
 // 5) 구조화 데이터(JSON-LD) — 검색엔진용 · 파싱 가능 여부까지 확인

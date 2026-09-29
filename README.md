@@ -45,7 +45,7 @@ tools/              parse-source · parse-pali · build-pages · build-sitemap �
                     · browser-check · serve · stage-site · font-charset
                     · make-font-subset · make-icons
 _source/            Gutenberg 원문 · SuttaCentral 팔리어 원문 (파싱 입력 — 배포 대상 아님)
-CNAME · robots.txt · sitemap.xml · icon.svg · icon-*.png · og.png
+CNAME · robots.txt · sitemap.xml · feed.xml · icon.svg · icon-*.png · og.png
 ```
 
 ## 판본과 저작권

@@ -68,6 +68,7 @@ function page({ title, desc, canonical, body, extraHead = '', depth = 0 }) {
 <link rel="icon" href="${p}icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${p}apple-touch-icon.png">
 <link rel="manifest" href="${p}manifest.webmanifest">
+<link rel="alternate" type="application/rss+xml" title="마음의 괴물을 다스리는 부처님 새 소식" href="https://buddha.monster/feed.xml">
 <link rel="stylesheet" href="${p}assets/site.css">
 <!-- 방문 분석 (자체 호스팅 · 쿠키 미사용 · 설정은 assets/analytics.js 한 곳) -->
 <script defer src="${p}assets/analytics.js"></script>

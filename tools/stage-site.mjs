@@ -34,6 +34,7 @@ const PUBLIC_FILES = [
   'terms.html',
   'robots.txt',
   'sitemap.xml',
+  'feed.xml',
   'CNAME',
   'manifest.webmanifest',
   'sw.js',
